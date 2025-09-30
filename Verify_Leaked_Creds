@@ -1,0 +1,39 @@
+Import-Module -Name ActiveDirectory
+
+# Import emails from CSV
+$emails = Import-Csv -Path "C:\Users\T2-StealthyScout\Desktop\email list.csv" | Select-Object -ExpandProperty Email
+
+# Create a list to store results
+$results = @()
+
+$total = $emails.Count
+$count = 0
+
+foreach ($email in $emails) {
+    $count++
+    $percentComplete = [math]::Round(($count / $total) * 100)
+
+    Write-Progress -Activity "Checking AD Users" `
+                   -Status "Processing $email ($count of $total)" `
+                   -PercentComplete $percentComplete
+
+    $user = Get-ADUser -Filter "Mail -eq '$email'" -Properties Enabled, Mail -ErrorAction SilentlyContinue
+
+    if ($user) {
+        $status = if ($user.Enabled) { "EXISTS (Active)" } else { "EXISTS (Inactive)" }
+    } else {
+        $status = "DOES NOT EXIST"
+    }
+
+    # Add result to list
+    $results += [PSCustomObject]@{
+        Email  = $email
+        Status = $status
+    }
+
+    Start-Sleep -Seconds 30
+}
+
+# Export all results at once
+$results | Export-Csv -Path "$env:USERPROFILE\Desktop\results.csv" -NoTypeInformation
+Start-Sleep -Seconds 60
