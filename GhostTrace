@@ -1,7 +1,37 @@
+.EXAMPLE
+
+
+.LINK
+    https://https://github.com/spearsies/incident-response-powershell/GhostTrace
+
+.NOTES
+    The script imports data from a CSV to compare against Active Directory to see if the user exists, is active or not.
+
+
+#>
+
+
+$Version = '2.2.0'
+$ASCIIBanner = @"
+  ____ _               _     _______                     
+ / ___| |__   ___  ___| |_  |__   __|__ _ __ ___   ___  
+| |  _| '_ \ / _ \/ __| __|    | |/ _ \ '__/ _ \ / _ \ 
+| |_| | | | |  __/\__ \ |_     | |  __/ | | (_) |  __/ 
+ \____|_| |_|\___||___/\__|    |_|\___|_|  \___/ \___| 
+
+  G H O S T   T R A C E
+
+"@
+Write-Host $ASCIIBanner
+Write-Host "Version: $Version"
+Write-Host "By twitter: @spearsies, Github:"spearsies"
+Write-Host "===========================================`n"
+
+
 Import-Module -Name ActiveDirectory
 
 # Import emails from CSV
-$emails = Import-Csv -Path "C:\Users\T2-StealthyScout\Desktop\email list.csv" | Select-Object -ExpandProperty Email
+$emails = Import-Csv -Path "path of the file.csv" | Select-Object -ExpandProperty Email
 
 # Create a list to store results
 $results = @()
