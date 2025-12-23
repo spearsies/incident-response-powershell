@@ -1,0 +1,172 @@
+name: Release Automation
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v2.5.0)'
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get version
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "VERSION=${{ inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Generate Changelog
+      id: changelog
+      run: |
+        echo "Generating changelog for ${{ steps.get_version.outputs.VERSION }}"
+        
+        # Get previous tag
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        
+        if [ -z "$PREVIOUS_TAG" ]; then
+          echo "First release - including all commits"
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" --reverse)
+        else
+          echo "Changes since $PREVIOUS_TAG"
+          CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --reverse)
+        fi
+        
+        # Save changelog to file
+        echo "$CHANGELOG" > CHANGELOG_TEMP.md
+        
+        echo "changelog_file=CHANGELOG_TEMP.md" >> $GITHUB_OUTPUT
+
+    - name: Create Release Notes
+      run: |
+        cat << EOF > RELEASE_NOTES.md
+        ## What's New in ${{ steps.get_version.outputs.VERSION }}
+        
+        This release includes the following changes:
+        
+        ### Changes
+        $(cat CHANGELOG_TEMP.md)
+        
+        ### Installation
+        
+        \`\`\`powershell
+        # Download the latest release
+        git clone https://github.com/spearsies/incident-response-powershell.git
+        cd incident-response-powershell
+        
+        # Run the DFIR script
+        .\DFIR-Script.ps1
+        \`\`\`
+        
+        ### Documentation
+        
+        - [README](https://github.com/spearsies/incident-response-powershell#readme)
+        - [ROADMAP](https://github.com/spearsies/incident-response-powershell/blob/main/ROADMAP.md)
+        - [Security Policy](https://github.com/spearsies/incident-response-powershell/blob/main/SECURITY.md)
+        
+        ### Contributors
+        
+        Thank you to all contributors who made this release possible!
+        
+        See [CONTRIBUTORS.md](https://github.com/spearsies/incident-response-powershell/blob/main/CONTRIBUTORS.md) for the full list.
+        EOF
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.VERSION }}
+        name: Release ${{ steps.get_version.outputs.VERSION }}
+        body_path: RELEASE_NOTES.md
+        draft: false
+        prerelease: ${{ contains(steps.get_version.outputs.VERSION, 'beta') || contains(steps.get_version.outputs.VERSION, 'alpha') }}
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.VERSION }}
+        files: |
+          DFIR-Script.ps1
+          README.md
+          ROADMAP.md
+          SECURITY.md
+          CONTRIBUTORS.md
+          LICENSE
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  package-scripts:
+    name: Package Scripts
+    runs-on: ubuntu-latest
+    needs: create-release
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Create Distribution Package
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        
+        # Create distribution directory
+        mkdir -p dist/incident-response-powershell-${VERSION}
+        
+        # Copy all PowerShell scripts
+        find . -name "*.ps1" -not -path "./.git/*" -exec cp --parents {} dist/incident-response-powershell-${VERSION}/ \;
+        
+        # Copy documentation
+        cp README.md CONTRIBUTORS.md SECURITY.md ROADMAP.md LICENSE dist/incident-response-powershell-${VERSION}/
+        
+        # Create zip archive
+        cd dist
+        zip -r incident-response-powershell-${VERSION}.zip incident-response-powershell-${VERSION}
+        
+        echo "✅ Package created: incident-response-powershell-${VERSION}.zip"
+
+    - name: Upload Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: distribution-package
+        path: dist/*.zip
+        retention-days: 90
+
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: create-release
+    if: success()
+    
+    steps:
+    - name: Get version
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Create Release Summary
+      run: |
+        echo "🎉 Release ${{ steps.get_version.outputs.VERSION }} has been published!"
+        echo ""
+        echo "View the release: https://github.com/spearsies/incident-response-powershell/releases/tag/${{ steps.get_version.outputs.VERSION }}"
+        echo ""
+        echo "Next steps:"
+        echo "1. Update documentation if needed"
+        echo "2. Announce on social media"
+        echo "3. Update any related projects"

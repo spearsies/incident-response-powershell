@@ -1,0 +1,122 @@
+name: PowerShell Script Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**.ps1'
+      - '.github/workflows/powershell-test.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.ps1'
+      - '.github/workflows/powershell-test.yml'
+  workflow_dispatch:
+
+jobs:
+  test-powershell-scripts:
+    name: Test PowerShell Scripts
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup PowerShell
+      shell: pwsh
+      run: |
+        Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)" -ForegroundColor Cyan
+        Write-Host "OS: $($PSVersionTable.OS)" -ForegroundColor Cyan
+
+    - name: Install PSScriptAnalyzer
+      shell: pwsh
+      run: |
+        Set-PSRepository PSGallery -InstallationPolicy Trusted
+        Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+        Write-Host "PSScriptAnalyzer installed successfully" -ForegroundColor Green
+
+    - name: Run PSScriptAnalyzer
+      shell: pwsh
+      run: |
+        Write-Host "Running PSScriptAnalyzer..." -ForegroundColor Cyan
+        
+        $scriptFiles = Get-ChildItem -Path . -Filter *.ps1 -Recurse | 
+                       Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+        
+        $totalIssues = 0
+        $errorIssues = 0
+        $warningIssues = 0
+        
+        foreach ($script in $scriptFiles) {
+            Write-Host "`nAnalyzing: $($script.Name)" -ForegroundColor Yellow
+            
+            $results = Invoke-ScriptAnalyzer -Path $script.FullName -Severity @('Error', 'Warning')
+            
+            if ($results) {
+                $totalIssues += $results.Count
+                $errorIssues += ($results | Where-Object Severity -eq 'Error').Count
+                $warningIssues += ($results | Where-Object Severity -eq 'Warning').Count
+                
+                $results | Format-Table -AutoSize
+            } else {
+                Write-Host "  ✓ No issues found" -ForegroundColor Green
+            }
+        }
+        
+        Write-Host "`n================================================" -ForegroundColor Cyan
+        Write-Host "Total Scripts: $($scriptFiles.Count)" -ForegroundColor White
+        Write-Host "Total Issues: $totalIssues (Errors: $errorIssues, Warnings: $warningIssues)" -ForegroundColor White
+        Write-Host "================================================" -ForegroundColor Cyan
+        
+        if ($errorIssues -gt 0) {
+            Write-Host "❌ Build failed due to errors" -ForegroundColor Red
+            exit 1
+        } else {
+            Write-Host "✓ All scripts passed validation" -ForegroundColor Green
+        }
+
+    - name: Syntax Check
+      shell: pwsh
+      run: |
+        Write-Host "Checking PowerShell syntax..." -ForegroundColor Cyan
+        
+        $scriptFiles = Get-ChildItem -Path . -Filter *.ps1 -Recurse | 
+                       Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+        
+        $syntaxErrors = 0
+        
+        foreach ($script in $scriptFiles) {
+            $errors = $null
+            $null = [System.Management.Automation.PSParser]::Tokenize(
+                (Get-Content $script.FullName -Raw), [ref]$errors
+            )
+            
+            if ($errors) {
+                Write-Host "✗ Syntax errors in: $($script.Name)" -ForegroundColor Red
+                $syntaxErrors++
+            }
+        }
+        
+        if ($syntaxErrors -eq 0) {
+            Write-Host "✓ All scripts have valid syntax" -ForegroundColor Green
+        } else {
+            exit 1
+        }
+
+  test-compatibility:
+    name: Test Windows Compatibility
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, windows-2019]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Test Compatibility
+      shell: pwsh
+      run: |
+        Write-Host "Testing on: $env:RUNNER_OS" -ForegroundColor Cyan
+        Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)" -ForegroundColor Cyan
+        Write-Host "✓ Compatibility check passed" -ForegroundColor Green

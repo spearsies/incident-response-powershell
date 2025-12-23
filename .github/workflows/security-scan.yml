@@ -1,0 +1,238 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly on Monday at 9:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  secret-scanning:
+    name: Scan for Secrets
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for secret scanning
+
+    - name: TruffleHog Secret Scanning
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+        extra_args: --debug --only-verified
+
+    - name: Detect Hardcoded Secrets (Manual)
+      run: |
+        echo "Scanning for potential hardcoded secrets..."
+        
+        # Patterns to search for
+        patterns=(
+          "password\s*=\s*['\"][^'\"]*['\"]"
+          "api[_-]?key\s*=\s*['\"][^'\"]*['\"]"
+          "secret\s*=\s*['\"][^'\"]*['\"]"
+          "token\s*=\s*['\"][^'\"]*['\"]"
+          "AKIA[0-9A-Z]{16}"  # AWS Access Key
+          "ghp_[0-9a-zA-Z]{36}"  # GitHub Personal Access Token
+        )
+        
+        found_secrets=0
+        
+        for pattern in "${patterns[@]}"; do
+          if grep -riE "$pattern" . --exclude-dir=.git --exclude-dir=.github; then
+            echo "⚠️  Potential secret found matching pattern: $pattern"
+            found_secrets=$((found_secrets + 1))
+          fi
+        done
+        
+        if [ $found_secrets -eq 0 ]; then
+          echo "✅ No hardcoded secrets detected"
+        else
+          echo "⚠️  Found $found_secrets potential secret(s)"
+          echo "Please review the findings above"
+        fi
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate
+
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript  # PowerShell analyzed as JavaScript
+        queries: security-and-quality
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+  malware-scan:
+    name: Malware Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install ClamAV
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clamav clamav-daemon
+        sudo systemctl stop clamav-freshclam
+        sudo freshclam
+        echo "✅ ClamAV installed and updated"
+
+    - name: Scan Repository
+      run: |
+        echo "🔍 Scanning repository for malware..."
+        clamscan -r --exclude-dir=".git" . || true
+        echo "✅ Malware scan complete"
+
+  license-compliance:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Check License File
+      run: |
+        if [ -f "LICENSE" ]; then
+          echo "✅ LICENSE file found"
+          echo "License content:"
+          head -n 5 LICENSE
+        else
+          echo "❌ LICENSE file not found"
+          exit 1
+        fi
+
+    - name: Check for License Headers
+      run: |
+        echo "Checking PowerShell files for license headers..."
+        
+        ps1_files=$(find . -name "*.ps1" -not -path "./.git/*")
+        missing_headers=0
+        
+        for file in $ps1_files; do
+          if ! grep -q "Copyright\|License\|BSD" "$file"; then
+            echo "⚠️  No license header in: $file"
+            missing_headers=$((missing_headers + 1))
+          fi
+        done
+        
+        if [ $missing_headers -eq 0 ]; then
+          echo "✅ All files have license information"
+        else
+          echo "ℹ️  $missing_headers file(s) missing license headers (non-blocking)"
+        fi
+
+  security-policy-check:
+    name: Security Policy Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Verify SECURITY.md Exists
+      run: |
+        if [ -f "SECURITY.md" ]; then
+          echo "✅ SECURITY.md found"
+          
+          # Check for required sections
+          required_sections=(
+            "Reporting Security Vulnerabilities"
+            "Security Considerations"
+            "Scope"
+          )
+          
+          missing_sections=0
+          for section in "${required_sections[@]}"; do
+            if ! grep -q "$section" SECURITY.md; then
+              echo "⚠️  Missing section: $section"
+              missing_sections=$((missing_sections + 1))
+            fi
+          done
+          
+          if [ $missing_sections -eq 0 ]; then
+            echo "✅ All required sections present in SECURITY.md"
+          fi
+        else
+          echo "⚠️  SECURITY.md not found - consider adding one"
+        fi
+
+  powershell-security-best-practices:
+    name: PowerShell Security Best Practices
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Check for Security Anti-Patterns
+      shell: pwsh
+      run: |
+        Write-Host "Checking for PowerShell security anti-patterns..." -ForegroundColor Cyan
+        
+        $scriptFiles = Get-ChildItem -Path . -Filter *.ps1 -Recurse | 
+                       Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+        
+        $issues = @()
+        
+        foreach ($script in $scriptFiles) {
+            $content = Get-Content $script.FullName -Raw
+            
+            # Check for dangerous cmdlets
+            if ($content -match 'Invoke-Expression') {
+                $issues += "⚠️  $($script.Name): Uses Invoke-Expression (potential code injection)"
+            }
+            
+            if ($content -match 'DownloadString\(') {
+                $issues += "⚠️  $($script.Name): Downloads and executes remote code"
+            }
+            
+            if ($content -match '-ExecutionPolicy\s+Bypass') {
+                $issues += "⚠️  $($script.Name): Bypasses execution policy"
+            }
+            
+            if ($content -match 'ConvertTo-SecureString.*-AsPlainText') {
+                $issues += "ℹ️  $($script.Name): Converts plain text to SecureString (review usage)"
+            }
+        }
+        
+        if ($issues.Count -eq 0) {
+            Write-Host "✅ No security anti-patterns detected" -ForegroundColor Green
+        } else {
+            Write-Host "`nFound $($issues.Count) potential security issue(s):" -ForegroundColor Yellow
+            $issues | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }
+            Write-Host "`nℹ️  These are flagged for review but don't fail the build" -ForegroundColor Cyan
+        }

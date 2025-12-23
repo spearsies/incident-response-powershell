@@ -1,0 +1,270 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      shell: pwsh
+      run: |
+        Set-PSRepository PSGallery -InstallationPolicy Trusted
+        Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+        Write-Host "✅ Dependencies installed" -ForegroundColor Green
+
+    - name: Run PSScriptAnalyzer
+      shell: pwsh
+      run: |
+        $results = Invoke-ScriptAnalyzer -Path . -Recurse -Severity @('Error', 'Warning')
+        
+        if ($results) {
+          $results | Format-Table -AutoSize
+          $errors = $results | Where-Object Severity -eq 'Error'
+          
+          if ($errors) {
+            Write-Host "❌ Found $($errors.Count) error(s)" -ForegroundColor Red
+            exit 1
+          }
+        } else {
+          Write-Host "✅ No issues found" -ForegroundColor Green
+        }
+
+  build-test:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, windows-2019]
+        include:
+          - os: windows-latest
+            display_name: "Windows Server 2022"
+          - os: windows-2019
+            display_name: "Windows Server 2019"
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Display Environment
+      shell: pwsh
+      run: |
+        Write-Host "================================" -ForegroundColor Cyan
+        Write-Host "Build Environment: ${{ matrix.display_name }}" -ForegroundColor Cyan
+        Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)" -ForegroundColor Cyan
+        Write-Host "OS: $($PSVersionTable.OS)" -ForegroundColor Cyan
+        Write-Host "================================" -ForegroundColor Cyan
+
+    - name: Validate Scripts
+      shell: pwsh
+      run: |
+        Write-Host "Validating PowerShell scripts..." -ForegroundColor Yellow
+        
+        $scripts = Get-ChildItem -Path . -Filter *.ps1 -Recurse | 
+                   Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+        
+        $validationErrors = 0
+        
+        foreach ($script in $scripts) {
+          Write-Host "Validating: $($script.Name)" -ForegroundColor Cyan
+          
+          # Parse script
+          $errors = $null
+          $tokens = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $script.FullName,
+            [ref]$tokens,
+            [ref]$errors
+          )
+          
+          if ($errors) {
+            Write-Host "  ✗ Parsing errors found" -ForegroundColor Red
+            $errors | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
+            $validationErrors++
+          } else {
+            Write-Host "  ✓ Valid" -ForegroundColor Green
+          }
+        }
+        
+        if ($validationErrors -gt 0) {
+          Write-Host "`n❌ $validationErrors script(s) failed validation" -ForegroundColor Red
+          exit 1
+        } else {
+          Write-Host "`n✅ All scripts validated successfully" -ForegroundColor Green
+        }
+
+    - name: Check Script Encoding
+      shell: pwsh
+      run: |
+        Write-Host "Checking file encodings..." -ForegroundColor Yellow
+        
+        $scripts = Get-ChildItem -Path . -Filter *.ps1 -Recurse | 
+                   Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+        
+        foreach ($script in $scripts) {
+          $encoding = Get-Content $script.FullName -Encoding Byte -TotalCount 4
+          
+          # Check for BOM
+          if ($encoding[0] -eq 0xEF -and $encoding[1] -eq 0xBB -and $encoding[2] -eq 0xBF) {
+            Write-Host "  $($script.Name): UTF-8 with BOM" -ForegroundColor Yellow
+          } else {
+            Write-Host "  $($script.Name): OK" -ForegroundColor Green
+          }
+        }
+
+  integration-test:
+    name: Integration Testing
+    runs-on: windows-latest
+    needs: build-test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Test DFIR Script Execution
+      shell: pwsh
+      run: |
+        Write-Host "Testing DFIR-Script.ps1 execution..." -ForegroundColor Yellow
+        
+        if (Test-Path "DFIR-Script.ps1") {
+          # Parse the script to ensure it's valid
+          $errors = $null
+          $tokens = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            "DFIR-Script.ps1",
+            [ref]$tokens,
+            [ref]$errors
+          )
+          
+          if ($errors) {
+            Write-Host "❌ DFIR-Script.ps1 has parsing errors" -ForegroundColor Red
+            exit 1
+          } else {
+            Write-Host "✅ DFIR-Script.ps1 is syntactically valid" -ForegroundColor Green
+          }
+        } else {
+          Write-Host "⚠️  DFIR-Script.ps1 not found" -ForegroundColor Yellow
+        }
+
+    - name: Test Module Imports
+      shell: pwsh
+      run: |
+        Write-Host "Testing script module structure..." -ForegroundColor Yellow
+        
+        $folders = @('Acquisition', 'Analysis', 'Containment')
+        
+        foreach ($folder in $folders) {
+          if (Test-Path $folder) {
+            $scripts = Get-ChildItem -Path $folder -Filter *.ps1
+            Write-Host "✓ $folder: $($scripts.Count) script(s)" -ForegroundColor Green
+          } else {
+            Write-Host "⚠️  $folder directory not found" -ForegroundColor Yellow
+          }
+        }
+
+  performance-test:
+    name: Performance Testing
+    runs-on: windows-latest
+    needs: build-test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Measure Script Performance
+      shell: pwsh
+      run: |
+        Write-Host "Measuring script performance..." -ForegroundColor Yellow
+        
+        $scripts = Get-ChildItem -Path . -Filter *.ps1 -Recurse | 
+                   Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' } |
+                   Select-Object -First 5
+        
+        foreach ($script in $scripts) {
+          Write-Host "`nTesting: $($script.Name)" -ForegroundColor Cyan
+          
+          $measure = Measure-Command {
+            $null = [System.Management.Automation.Language.Parser]::ParseFile(
+              $script.FullName,
+              [ref]$null,
+              [ref]$null
+            )
+          }
+          
+          Write-Host "  Parse time: $($measure.TotalMilliseconds)ms" -ForegroundColor Gray
+          
+          if ($measure.TotalMilliseconds -gt 1000) {
+            Write-Host "  ⚠️  Slow parse time" -ForegroundColor Yellow
+          } else {
+            Write-Host "  ✓ Good performance" -ForegroundColor Green
+          }
+        }
+
+  generate-report:
+    name: Generate CI Report
+    runs-on: ubuntu-latest
+    needs: [code-quality, build-test, integration-test]
+    if: always()
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Generate Build Report
+      run: |
+        echo "# CI/CD Build Report" > ci-report.md
+        echo "" >> ci-report.md
+        echo "**Build Date**: $(date)" >> ci-report.md
+        echo "**Commit**: ${{ github.sha }}" >> ci-report.md
+        echo "**Branch**: ${{ github.ref_name }}" >> ci-report.md
+        echo "" >> ci-report.md
+        
+        echo "## Job Status" >> ci-report.md
+        echo "" >> ci-report.md
+        echo "- Code Quality: ${{ needs.code-quality.result }}" >> ci-report.md
+        echo "- Build Test: ${{ needs.build-test.result }}" >> ci-report.md
+        echo "- Integration Test: ${{ needs.integration-test.result }}" >> ci-report.md
+        echo "" >> ci-report.md
+        
+        # Count scripts
+        script_count=$(find . -name "*.ps1" -not -path "./.git/*" | wc -l)
+        echo "**Total PowerShell Scripts**: $script_count" >> ci-report.md
+        
+        cat ci-report.md
+
+    - name: Upload CI Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-report
+        path: ci-report.md
+        retention-days: 30
+
+  update-badges:
+    name: Update README Badges
+    runs-on: ubuntu-latest
+    needs: [code-quality, build-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Check Build Status
+      run: |
+        if [ "${{ needs.code-quality.result }}" == "success" ] && [ "${{ needs.build-test.result }}" == "success" ]; then
+          echo "✅ All checks passed - build is passing"
+          echo "BUILD_STATUS=passing" >> $GITHUB_ENV
+        else
+          echo "❌ Some checks failed - build is failing"
+          echo "BUILD_STATUS=failing" >> $GITHUB_ENV
+        fi
