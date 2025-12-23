@@ -1,0 +1,525 @@
+# Project Roadmap
+
+This roadmap outlines the planned features, enhancements, and goals for the Incident Response PowerShell toolkit. It's a living document that reflects our commitment to continuous improvement and community-driven development.
+
+**Last Updated**: December 2024  
+**Maintainer**: [@spearsies](https://github.com/spearsies)
+
+---
+
+## 🎯 Vision & Mission
+
+### Vision
+To provide the most comprehensive, efficient, and user-friendly PowerShell-based DFIR toolkit for security professionals worldwide.
+
+### Mission
+- **Empower incident responders** with automated evidence collection
+- **Streamline investigations** through standardized data formats
+- **Accelerate threat hunting** with pre-built analysis modules
+- **Foster collaboration** within the security community
+- **Maintain excellence** through continuous improvement
+
+---
+
+## 📊 Current Status
+
+### ✅ Completed Features (v2.x)
+
+- [x] Core DFIR artifact collection (25+ artifacts)
+- [x] CSV export for SIEM integration
+- [x] Microsoft Defender for Endpoint Live Response support
+- [x] Modular script architecture (Acquisition/Analysis/Containment)
+- [x] Browser history collection (Chrome, Edge, Firefox)
+- [x] PowerShell command history extraction
+- [x] Network artifact collection
+- [x] Process and service enumeration
+- [x] Persistence mechanism detection
+- [x] Automated evidence packaging (ZIP)
+- [x] Comprehensive documentation
+- [x] BSD 3-Clause licensing
+
+### 🔄 In Progress
+
+- [ ] Enhanced YARA rule integration
+- [ ] Sigma rule detection capabilities
+- [ ] Improved error handling and logging
+- [ ] Performance optimization for large environments
+
+---
+
+## 🗓️ Release Timeline
+
+## Q1 2025 (January - March)
+
+### Release v2.5 - Enhanced Detection
+
+**Focus**: Detection engineering and threat hunting capabilities
+
+#### High Priority Features
+
+- [ ] **YARA Integration Module**
+  - Scan memory dumps with YARA rules
+  - Scan file system for malware signatures
+  - Import custom YARA rule sets
+  - Export YARA match results to CSV
+  - Integration with common YARA rule repositories
+
+- [ ] **Sigma Rule Detection**
+  - Convert Sigma rules to PowerShell detection logic
+  - Scan Windows Event Logs with Sigma rules
+  - Support for common Sigma rule backends
+  - Export detections with context and evidence
+
+- [ ] **Enhanced Logging Framework**
+  - Structured logging (JSON format)
+  - Configurable log levels (Debug, Info, Warn, Error)
+  - Separate log files for different script modules
+  - Log rotation and retention policies
+
+- [ ] **Improved Error Handling**
+  - Graceful degradation for permission errors
+  - Retry logic for transient failures
+  - Detailed error messages with remediation steps
+  - Error summary report at script completion
+
+#### Medium Priority Features
+
+- [ ] **Memory Artifact Collection**
+  - Integration with WinPmem for memory acquisition
+  - Process memory dumping capabilities
+  - Memory strings extraction
+  - Automated memory analysis hooks
+
+- [ ] **Timeline Generation**
+  - Automated timeline from collected artifacts
+  - MACB (Modified, Accessed, Changed, Born) timeline
+  - Super timeline format support
+  - Export to Plaso/timesketch format
+
+- [ ] **Configuration File Support**
+  - YAML/JSON configuration files
+  - Customizable artifact collection profiles
+  - Pre-defined profiles (quick, standard, comprehensive)
+  - Organization-specific configurations
+
+#### Documentation
+
+- [ ] Video tutorials for common scenarios
+- [ ] Integration guides for popular SIEM platforms
+- [ ] Threat hunting playbooks using the toolkit
+- [ ] Performance tuning guide
+
+---
+
+## Q2 2025 (April - June)
+
+### Release v3.0 - Advanced Analysis & Automation
+
+**Focus**: Automated analysis and intelligence integration
+
+#### High Priority Features
+
+- [ ] **Automated IOC Extraction**
+  - Extract IPs, domains, file hashes from artifacts
+  - Automatic deduplication and formatting
+  - Export in STIX/TAXII format
+  - Integration with threat intelligence platforms
+
+- [ ] **VirusTotal Integration**
+  - Hash lookup for collected executables
+  - Domain/IP reputation checking
+  - Automated submission of suspicious files
+  - Results correlation with collected artifacts
+
+- [ ] **MITRE ATT&CK Mapping**
+  - Map detected artifacts to ATT&CK techniques
+  - Generate ATT&CK Navigator layers
+  - TTP (Tactics, Techniques, Procedures) summary
+  - Coverage heat maps
+
+- [ ] **Automated Triage Scoring**
+  - Risk scoring for collected artifacts
+  - Suspicious activity ranking
+  - Priority recommendations for analysts
+  - Customizable scoring rules
+
+#### Medium Priority Features
+
+- [ ] **Registry Deep Dive**
+  - Complete registry hive extraction
+  - ShimCache analysis
+  - AmCache parsing
+  - UserAssist analysis
+  - Recent document tracking
+
+- [ ] **Prefetch Analysis**
+  - Prefetch file parsing
+  - Application execution timeline
+  - File access patterns
+  - Cross-reference with process artifacts
+
+- [ ] **Event Log Enhanced Parsing**
+  - XML event log parsing
+  - Common attack pattern detection
+  - Event correlation across sources
+  - Suspicious event highlighting
+
+- [ ] **Network Traffic Analysis Hooks**
+  - Integration with network capture tools
+  - PCAP file collection triggers
+  - Network connection correlation
+  - DNS query analysis enhancement
+
+#### Documentation
+
+- [ ] Advanced analysis techniques guide
+- [ ] Threat intelligence integration examples
+- [ ] MITRE ATT&CK hunting scenarios
+- [ ] API integration documentation
+
+---
+
+## Q3 2025 (July - September)
+
+### Release v3.5 - Enterprise & Cloud Integration
+
+**Focus**: Enterprise deployment and cloud platform support
+
+#### High Priority Features
+
+- [ ] **Bulk Deployment Capabilities**
+  - PowerShell DSC configurations
+  - Group Policy deployment templates
+  - SCCM/Intune deployment packages
+  - Ansible playbook integration
+
+- [ ] **Azure Sentinel Native Integration**
+  - Direct upload to Log Analytics workspace
+  - Custom table creation
+  - Built-in KQL queries and workbooks
+  - Automated alert rules
+
+- [ ] **Cloud Artifact Collection**
+  - Azure AD sign-in logs
+  - Office 365 audit logs
+  - Azure Activity logs
+  - AWS CloudTrail integration (PowerShell Core)
+
+- [ ] **Remote Execution Framework**
+  - WinRM-based remote collection
+  - PowerShell remoting optimization
+  - Parallel execution across endpoints
+  - Centralized result aggregation
+
+#### Medium Priority Features
+
+- [ ] **Compliance Reporting**
+  - CIS benchmark checks
+  - NIST CSF alignment
+  - PCI DSS artifact collection
+  - SOC 2 audit support
+
+- [ ] **Custom Plugin Architecture**
+  - Plugin development framework
+  - Community plugin marketplace
+  - Plugin manager (install/update/remove)
+  - API for plugin development
+
+- [ ] **Web-Based Reporting Dashboard**
+  - HTML dashboard generation
+  - Interactive charts and graphs
+  - Executive summary reports
+  - Technical detail views
+
+- [ ] **Encrypted Evidence Storage**
+  - Built-in AES encryption for artifacts
+  - Password-protected ZIP archives
+  - Certificate-based encryption
+  - Secure key management
+
+#### Documentation
+
+- [ ] Enterprise deployment guide
+- [ ] Cloud integration tutorials
+- [ ] Compliance mapping documentation
+- [ ] Plugin development guide
+
+---
+
+## Q4 2025 (October - December)
+
+### Release v4.0 - AI-Assisted Analysis & Advanced Forensics
+
+**Focus**: Machine learning and advanced forensic capabilities
+
+#### High Priority Features
+
+- [ ] **AI-Powered Anomaly Detection**
+  - Baseline normal behavior
+  - Detect statistical outliers
+  - Machine learning model integration
+  - Automated alert generation for anomalies
+
+- [ ] **Natural Language Incident Reporting**
+  - AI-generated incident summaries
+  - Evidence correlation narratives
+  - Timeline descriptions
+  - Suggested next steps for analysts
+
+- [ ] **Advanced File System Forensics**
+  - MFT (Master File Table) parsing
+  - USN Journal analysis
+  - File slack space analysis
+  - Deleted file recovery
+
+- [ ] **Advanced Process Analysis**
+  - Process tree visualization
+  - DLL injection detection
+  - Process hollowing identification
+  - Reflective DLL loading detection
+
+#### Medium Priority Features
+
+- [ ] **Malware Analysis Sandbox Integration**
+  - Automated submission to sandbox
+  - Results retrieval and correlation
+  - Behavioral analysis reports
+  - Integration with Cuckoo, Joe Sandbox, etc.
+
+- [ ] **Email Forensics Module**
+  - PST/OST file parsing
+  - Email header analysis
+  - Attachment extraction and analysis
+  - Phishing indicator detection
+
+- [ ] **Mobile Device Triage**
+  - iOS backup analysis (when connected)
+  - Android device data extraction
+  - Mobile app artifact collection
+  - Cross-platform correlation
+
+- [ ] **Cryptocurrency Forensics**
+  - Wallet detection
+  - Transaction history collection
+  - Blockchain analysis integration
+  - Ransomware payment tracking
+
+#### Documentation
+
+- [ ] AI-assisted analysis guide
+- [ ] Advanced forensics techniques
+- [ ] Case study collection
+- [ ] Research paper contributions
+
+---
+
+## 🔮 Future Considerations (2026+)
+
+### Long-Term Vision
+
+- [ ] **Cross-Platform Support**
+  - PowerShell Core for Linux DFIR
+  - macOS artifact collection
+  - Unified cross-platform reporting
+
+- [ ] **Real-Time Monitoring Mode**
+  - Continuous artifact collection
+  - Real-time threat detection
+  - Event-driven response actions
+  - Integration with EDR platforms
+
+- [ ] **Graph Database Integration**
+  - Neo4j for relationship mapping
+  - Attack path visualization
+  - Lateral movement detection
+  - Entity relationship analysis
+
+- [ ] **Kubernetes Forensics**
+  - Container artifact collection
+  - Pod memory dumps
+  - Kubernetes audit log analysis
+  - Container image analysis
+
+- [ ] **Threat Intelligence Sharing**
+  - Automated IOC sharing to MISPs
+  - Community threat feeds
+  - Anonymous telemetry for threat trends
+  - Collaborative threat hunting
+
+- [ ] **Blockchain Evidence Chain**
+  - Immutable evidence timestamping
+  - Chain of custody verification
+  - Digital signature validation
+  - Court-admissible evidence tracking
+
+---
+
+## 🎯 Strategic Goals
+
+### Technical Excellence
+1. **Performance**: Sub-5-minute collection time for standard artifacts
+2. **Reliability**: 99.9% success rate for artifact collection
+3. **Scalability**: Support for 10,000+ endpoint deployments
+4. **Compatibility**: Support for Windows 7-11 and Server 2008 R2-2025
+
+### Community Growth
+1. **Contributors**: Grow to 50+ active contributors
+2. **Stars**: Achieve 1,000+ GitHub stars
+3. **Downloads**: 10,000+ script executions per month
+4. **Documentation**: Comprehensive docs in 3+ languages
+
+### Industry Recognition
+1. **Conference Presentations**: Present at major security conferences
+2. **Academic Citations**: Referenced in security research papers
+3. **Enterprise Adoption**: Used by 100+ organizations
+4. **Certifications**: Recommended by certification bodies (SANS, CompTIA)
+
+---
+
+## 🤝 Community Input
+
+### How You Can Influence This Roadmap
+
+We value community feedback! Here's how you can help shape the future:
+
+#### 📢 Feature Requests
+- [Open an issue](https://github.com/spearsies/incident-response-powershell/issues/new) with the "enhancement" label
+- Describe your use case and why the feature would be valuable
+- Vote on existing feature requests with 👍 reactions
+
+#### 💡 Discussions
+- Join [GitHub Discussions](https://github.com/spearsies/incident-response-powershell/discussions)
+- Share your experience and challenges
+- Propose new ideas and approaches
+
+#### 🔬 Research Contributions
+- Share new forensic techniques
+- Contribute threat hunting methodologies
+- Submit case studies and lessons learned
+
+#### 🛠️ Code Contributions
+- Pick a feature from the roadmap
+- Submit pull requests
+- Help with code reviews
+
+---
+
+## 📊 Progress Tracking
+
+### Metrics We Track
+
+- **Feature Completion Rate**: Percentage of planned features delivered
+- **Issue Resolution Time**: Average time to close issues
+- **Community Engagement**: Contributors, stars, forks, discussions
+- **Code Quality**: Test coverage, linting scores, security scans
+- **Documentation**: Coverage percentage, user satisfaction
+
+### Quarterly Reviews
+
+Every quarter, we will:
+1. Review progress against roadmap goals
+2. Adjust priorities based on community feedback
+3. Update completion estimates
+4. Celebrate achievements and milestones
+
+---
+
+## 🏆 Milestones
+
+### Milestone 1: Foundation ✅ (Completed)
+- Core DFIR script functionality
+- Basic documentation
+- Initial community engagement
+
+### Milestone 2: Enhancement 🔄 (In Progress)
+- Advanced detection capabilities
+- Improved error handling
+- Comprehensive documentation
+
+### Milestone 3: Integration (Q2 2025)
+- Threat intelligence integration
+- SIEM platform connectors
+- Automated analysis
+
+### Milestone 4: Enterprise (Q3 2025)
+- Bulk deployment support
+- Cloud platform integration
+- Compliance reporting
+
+### Milestone 5: Intelligence (Q4 2025)
+- AI-assisted analysis
+- Advanced forensics
+- Industry recognition
+
+---
+
+## 🔄 Versioning Strategy
+
+### Semantic Versioning
+We follow semantic versioning (MAJOR.MINOR.PATCH):
+
+- **MAJOR**: Breaking changes, major architectural updates
+- **MINOR**: New features, backward-compatible
+- **PATCH**: Bug fixes, minor improvements
+
+### Release Cycle
+- **Major releases**: Annually (Q4)
+- **Minor releases**: Quarterly
+- **Patch releases**: As needed (critical bugs, security fixes)
+
+### Beta Program
+- Early access to new features
+- Community testing and feedback
+- Pre-release bug identification
+
+---
+
+## 📞 Roadmap Feedback
+
+Have thoughts on this roadmap? We'd love to hear from you!
+
+- **GitHub Issues**: For specific feature requests
+- **GitHub Discussions**: For general ideas and feedback
+- **Email**: Contact [@spearsies](https://github.com/spearsies) directly
+- **Twitter/X**: Share your thoughts with #IRPowerShell
+
+---
+
+## 📚 Additional Resources
+
+### Related Projects
+- [Velociraptor](https://docs.velociraptor.app/) - Advanced DFIR platform
+- [KAPE](https://www.kroll.com/en/services/cyber-risk/incident-response-litigation-support/kroll-artifact-parser-extractor-kape) - Triage and parsing
+- [PowerForensics](https://github.com/Invoke-IR/PowerForensics) - PowerShell forensics framework
+
+### Learning Resources
+- [SANS DFIR Blog](https://www.sans.org/blog/?focus-area=digital-forensics)
+- [13Cubed YouTube Channel](https://www.youtube.com/c/13cubed)
+- [DFIR Diva](https://dfirdiva.com/)
+
+### Standards & Frameworks
+- [NIST SP 800-86: Guide to Integrating Forensic Techniques into Incident Response](https://csrc.nist.gov/publications/detail/sp/800-86/final)
+- [MITRE ATT&CK Framework](https://attack.mitre.org/)
+- [Cyber Kill Chain](https://www.lockheedmartin.com/en-us/capabilities/cyber/cyber-kill-chain.html)
+
+---
+
+## 🙏 Acknowledgments
+
+This roadmap is shaped by:
+- **Community feedback** from users and contributors
+- **Industry trends** in DFIR and threat hunting
+- **Real-world incidents** and lessons learned
+- **Research** from the security community
+- **Original work** by [Bert-JanP](https://github.com/Bert-JanP)
+
+---
+
+**Remember**: This roadmap is a living document. Features may be added, removed, or reprioritized based on community needs, technical feasibility, and resource availability.
+
+**Last Updated**: December 2024  
+**Next Review**: March 2025
+
+---
+
+*Built by incident responders, for incident responders.* 🛡️
