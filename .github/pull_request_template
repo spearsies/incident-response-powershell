@@ -1,1 +1,68 @@
+## Description
+<!-- Provide a clear and concise description of your changes -->
+
+## Type of Change
+<!-- Mark the relevant option with an 'x' -->
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📚 Documentation update
+- [ ] 🔧 Configuration change
+- [ ] ♻️ Code refactoring
+- [ ] ⚡ Performance improvement
+- [ ] 🔒 Security fix
+
+## Related Issues
+<!-- Link related issues. Use "Fixes #123" to auto-close issues when PR is merged -->
+Fixes #
+Related to #
+
+## Changes Made
+<!-- List the specific changes made in this PR -->
+- 
+- 
+- 
+
+## Testing
+<!-- Describe the testing you've done -->
+
+### Test Environment
+- **OS**: [e.g., Windows 10, Windows Server 2019]
+- **PowerShell Version**: [e.g., 5.1, 7.4]
+- **Execution Method**: [e.g., Direct, Live Response]
+
+### Test Steps
+1. 
+2. 
+3. 
+
+### Test Results
+- [ ] All existing tests pass
+- [ ] New tests added (if applicable)
+- [ ] Manual testing completed
+- [ ] No errors or warnings generated
+
+## Code Quality Checklist
+- [ ] Code follows PowerShell best practices
+- [ ] PSScriptAnalyzer passes with no errors
+- [ ] All functions have comment-based help
+- [ ] Variables use clear, descriptive names
+- [ ] Error handling is implemented
+- [ ] No hardcoded credentials or sensitive data
+
+## Documentation
+- [ ] README.md updated (if needed)
+- [ ] Inline code comments added
+- [ ] ROADMAP.md updated (if this completes a roadmap item)
+- [ ] Usage examples provided
+
+## Security Checklist
+- [ ] No secrets or credentials in code
+- [ ] Proper input validation implemented
+- [ ] Safe PowerShell practices followed
+- [ ] SECURITY.md guidelines followed
+
+---
+
+By submitting this pull request, I confirm that my changes are licensed under the BSD 3-Clause License.
 
